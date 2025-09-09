@@ -816,6 +816,7 @@ def home():
 @app.route("/test", methods=["POST"])
 def test_message():
     """Test endpoint to simulate a message"""
+    _lazy_bootstrap()  # Ensure initialization
     data = request.get_json()
     test_message = data.get("message", "hello")
     test_number = data.get("number", "1234567890")
