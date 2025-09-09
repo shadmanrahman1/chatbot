@@ -1,0 +1,140 @@
+{
+  "info": {
+    "name": "WhatsApp Bot Railway API Tests",
+    "description": "Testing Railway deployment endpoints for WhatsApp EdTech Bot",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Check App Status (Home)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://web-production-e9648.up.railway.app/",
+          "protocol": "https",
+          "host": ["web-production-e9648", "up", "railway", "app"],
+          "path": [""]
+        },
+        "description": "Check if the new version v2.1 is deployed with seeding endpoints"
+      }
+    },
+    {
+      "name": "2. Health Check (Before Seeding)",
+      "request": {
+        "method": "GET", 
+        "header": [],
+        "url": {
+          "raw": "https://web-production-e9648.up.railway.app/health",
+          "protocol": "https",
+          "host": ["web-production-e9648", "up", "railway", "app"],
+          "path": ["health"]
+        },
+        "description": "Check current database counts before seeding"
+      }
+    },
+    {
+      "name": "3. Seed Database (POST Method)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "https://web-production-e9648.up.railway.app/seed",
+          "protocol": "https",
+          "host": ["web-production-e9648", "up", "railway", "app"],
+          "path": ["seed"]
+        },
+        "description": "Seed the database with courses and FAQs"
+      }
+    },
+    {
+      "name": "4. Health Check with Seeding (GET)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://web-production-e9648.up.railway.app/health?seed=true",
+          "protocol": "https",
+          "host": ["web-production-e9648", "up", "railway", "app"],
+          "path": ["health"],
+          "query": [
+            {
+              "key": "seed",
+              "value": "true"
+            }
+          ]
+        },
+        "description": "Try seeding via health endpoint GET parameter"
+      }
+    },
+    {
+      "name": "5. Health Check with Seeding (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"seed\": true\n}"
+        },
+        "url": {
+          "raw": "https://web-production-e9648.up.railway.app/health",
+          "protocol": "https",
+          "host": ["web-production-e9648", "up", "railway", "app"],
+          "path": ["health"]
+        },
+        "description": "Try seeding via health endpoint POST method"
+      }
+    },
+    {
+      "name": "6. Health Check (After Seeding)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://web-production-e9648.up.railway.app/health",
+          "protocol": "https",
+          "host": ["web-production-e9648", "up", "railway", "app"],
+          "path": ["health"]
+        },
+        "description": "Verify database has been seeded successfully"
+      }
+    },
+    {
+      "name": "7. Test Message Processing",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type", 
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"What courses do you offer?\",\n  \"number\": \"1234567890\"\n}"
+        },
+        "url": {
+          "raw": "https://web-production-e9648.up.railway.app/test",
+          "protocol": "https",
+          "host": ["web-production-e9648", "up", "railway", "app"],
+          "path": ["test"]
+        },
+        "description": "Test message processing with seeded data"
+      }
+    }
+  ]
+}
