@@ -98,16 +98,19 @@ FAQS = []
 
 
 def get_database_connection():
-    """Get database connection with enhanced error handling"""
+    """Get database connection with enhanced error handling.
+    Uses a short timeout so startup isn't blocked if DB is slow/unavailable."""
     try:
-        connection = mysql.connector.connect(**DB_CONFIG)
-        logger.info("✅ Database connection successful")
+        connection = mysql.connector.connect(
+            **DB_CONFIG,
+            connection_timeout=5,
+        )
         return connection
     except mysql.connector.Error as e:
-        logger.error(f"❌ Database connection error: {e}")
+        logger.warning(f"⚠️ DB connection issue (non-fatal): {e}")
         return None
     except Exception as e:
-        logger.error(f"❌ Unexpected database error: {e}")
+        logger.warning(f"⚠️ Unexpected DB error (non-fatal): {e}")
         return None
 
 
@@ -1035,48 +1038,50 @@ def seed_database():
             connection.close()
 
 
-# Initialize data on startup
-def initialize_data():
-    """Load data from database on startup"""
+def initialize_data(force: bool = False):
+    """Load data from database.
+    Only runs if local caches empty unless force=True.
+    """
     global COURSES, FAQS
-    logger.info("🔄 Initializing data from database...")
+    if COURSES and FAQS and not force:
+        return
+    logger.info("🔄 Loading data from database (lazy)...")
+    new_courses = get_courses_from_db()
+    new_faqs = get_faqs_from_db()
+    if new_courses:
+        COURSES = new_courses
+    if new_faqs:
+        FAQS = new_faqs
+    logger.info(
+        f"✅ Data ready: {len(COURSES)} courses, {len(FAQS)} FAQs (force={force})"
+    )
 
-    COURSES = get_courses_from_db()
-    FAQS = get_faqs_from_db()
 
-    logger.info(f"✅ Initialization complete: {len(COURSES)} courses, {len(FAQS)} FAQs")
+@app.before_first_request
+def _lazy_bootstrap():
+    """Ensure data is loaded only once per process just before serving traffic."""
+    initialize_data()
 
+
+def _log_config_state():
+    missing = []
+    if not WHATSAPP_TOKEN:
+        missing.append("WHATSAPP_TOKEN")
+    if not PHONE_NUMBER_ID:
+        missing.append("PHONE_NUMBER_ID")
+    if not VERIFY_TOKEN:
+        missing.append("VERIFY_TOKEN")
+    if missing:
+        logger.warning(f"⚠️ Missing env vars: {', '.join(missing)}")
+    if not GROQ_API_KEY:
+        logger.warning("⚠️ GROQ_API_KEY not set – AI replies downgraded")
+
+
+_log_config_state()
 
 if __name__ == "__main__":
-    logger.info("🚀 Starting WhatsApp EdTech Bot for Railway...")
-
-    # Verify configuration
-    missing_config = []
-    if not WHATSAPP_TOKEN:
-        missing_config.append("WHATSAPP_TOKEN")
-    if not PHONE_NUMBER_ID:
-        missing_config.append("PHONE_NUMBER_ID")
-    if not VERIFY_TOKEN:
-        missing_config.append("VERIFY_TOKEN")
-
-    if missing_config:
-        logger.error(
-            f"❌ Missing required environment variables: {', '.join(missing_config)}"
-        )
-    else:
-        logger.info("✅ All required environment variables configured")
-
-    if not GROQ_API_KEY:
-        logger.warning("⚠️ GROQ_API_KEY not configured - AI responses will use fallback")
-
-    # Load data from database
+    # Local dev: trigger lazy load (non-blocking if DB down)
     initialize_data()
-
-    # Get port from environment (Railway sets this)
     port = int(os.getenv("PORT", 5000))
-
-    logger.info(f"🌐 Starting server on port {port}")
+    logger.info(f"🌐 Dev server on :{port} (lazy init)")
     app.run(host="0.0.0.0", port=port, debug=False)
-else:
-    # For production (gunicorn), initialize data when module is imported
-    initialize_data()
