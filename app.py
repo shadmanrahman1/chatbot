@@ -232,7 +232,14 @@ def send_whatsapp_message(to_number, message):
             "text": {"body": message},
         }
 
+        logger.info(f"🌐 API Call: POST {url}")
+        logger.info(f"🔑 Using token: ...{WHATSAPP_TOKEN[-10:] if WHATSAPP_TOKEN else 'NONE'}")
+        logger.info(f"📞 To: {to_number}, Phone ID: {PHONE_NUMBER_ID}")
+
         response = requests.post(url, json=payload, headers=headers, timeout=30)
+        
+        logger.info(f"🔄 API Response: {response.status_code}")
+        logger.info(f"📄 Response body: {response.text}")
 
         if response.status_code == 200:
             logger.info(f"✅ Message sent to {to_number}")
@@ -521,15 +528,20 @@ def webhook():
                             for message in messages:
                                 from_number = message.get("from")
                                 message_type = message.get("type")
+                                
+                                logger.info(f"📱 Processing message: type={message_type}, from={from_number}")
 
                                 if message_type == "text":
                                     text_body = message.get("text", {}).get("body", "")
+                                    logger.info(f"📝 Message text: '{text_body}'")
 
                                     # Process the message
                                     response = process_message(text_body, from_number)
+                                    logger.info(f"🤖 Generated response length: {len(response) if response else 0}")
 
                                     # Send response
                                     if response:
+                                        logger.info(f"📤 Attempting to send message to {from_number}")
                                         send_success = send_whatsapp_message(
                                             from_number, response
                                         )
@@ -541,6 +553,8 @@ def webhook():
                                             logger.error(
                                                 f"❌ Failed to send response to {from_number}"
                                             )
+                                    else:
+                                        logger.error(f"❌ No response generated for message: '{text_body}'")
 
             return jsonify({"status": "ok"}), 200
 
