@@ -784,9 +784,15 @@ def home():
     """Home endpoint"""
     return jsonify(
         {
-            "message": "🤖 WhatsApp EdTech Bot is running!",
-            "endpoints": {"webhook": "/webhook", "health": "/health", "test": "/test"},
+            "message": "🤖 WhatsApp EdTech Bot v2.1 is running with seeding!",
+            "endpoints": {
+                "webhook": "/webhook",
+                "health": "/health",
+                "test": "/test",
+                "seed": "/seed",
+            },
             "status": "active",
+            "version": "2.1-with-seeding",
         }
     ), 200
 
