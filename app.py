@@ -196,8 +196,8 @@ def get_faqs_from_db():
 
 def verify_webhook_signature(payload, signature):
     """Verify webhook signature from Meta"""
-    if not APP_SECRET:
-        logger.warning("⚠️ APP_SECRET not configured, skipping signature verification")
+    if not APP_SECRET or APP_SECRET == "your_app_secret_here":
+        logger.warning("⚠️ APP_SECRET not configured or using placeholder, skipping signature verification")
         return True
 
     try:
@@ -485,7 +485,9 @@ def webhook():
         logger.info(f"   Expected token: {VERIFY_TOKEN}")
         logger.info(f"   Token match: {hub_verify_token == VERIFY_TOKEN}")
         logger.info(f"   VERIFY_TOKEN is set: {bool(VERIFY_TOKEN)}")
-        logger.info(f"   VERIFY_TOKEN length: {len(VERIFY_TOKEN) if VERIFY_TOKEN else 0}")
+        logger.info(
+            f"   VERIFY_TOKEN length: {len(VERIFY_TOKEN) if VERIFY_TOKEN else 0}"
+        )
 
         if hub_mode == "subscribe" and hub_verify_token == VERIFY_TOKEN:
             logger.info("✅ Webhook verification successful!")
