@@ -478,11 +478,14 @@ def webhook():
         hub_verify_token = request.args.get("hub.verify_token")
         hub_challenge = request.args.get("hub.challenge")
 
-        logger.info(f"🔍 Webhook verification request:")
+        logger.info("🔍 Webhook verification request:")
         logger.info(f"   Mode: {hub_mode}")
         logger.info(f"   Token received: {hub_verify_token}")
         logger.info(f"   Challenge: {hub_challenge}")
         logger.info(f"   Expected token: {VERIFY_TOKEN}")
+        logger.info(f"   Token match: {hub_verify_token == VERIFY_TOKEN}")
+        logger.info(f"   VERIFY_TOKEN is set: {bool(VERIFY_TOKEN)}")
+        logger.info(f"   VERIFY_TOKEN length: {len(VERIFY_TOKEN) if VERIFY_TOKEN else 0}")
 
         if hub_mode == "subscribe" and hub_verify_token == VERIFY_TOKEN:
             logger.info("✅ Webhook verification successful!")
