@@ -552,6 +552,8 @@ def webhook():
 def health():
     """Health check endpoint for Railway monitoring with optional seeding"""
     try:
+        _lazy_bootstrap()  # Ensure initialization
+
         # Check for seed parameter
         seed_requested = False
         if request.method == "POST":
@@ -565,6 +567,8 @@ def health():
         connection = get_database_connection()
         db_status = "connected" if connection else "disconnected"
 
+        # Declare globals at start of function
+        global COURSES, FAQS
         course_count = len(COURSES)
         faq_count = len(FAQS)
 
@@ -749,8 +753,7 @@ def health():
 
                 connection.commit()
 
-                # Reload global data
-                global COURSES, FAQS
+                # Reload global data (global already declared above)
                 COURSES = get_courses_from_db()
                 FAQS = get_faqs_from_db()
 
@@ -791,6 +794,7 @@ def health():
 @app.route("/", methods=["GET"])
 def home():
     """Home endpoint"""
+    _lazy_bootstrap()  # Ensure initialization
     return jsonify(
         {
             "message": "🤖 WhatsApp EdTech Bot v2.1 is running with seeding!",
@@ -799,9 +803,12 @@ def home():
                 "health": "/health",
                 "test": "/test",
                 "seed": "/seed",
+                "ready": "/ready",
+                "meta": "/meta",
             },
             "status": "active",
-            "version": "2.1-with-seeding",
+            "version": VERSION,
+            "commit": BUILD_COMMIT[:7],
         }
     ), 200
 
@@ -1063,16 +1070,18 @@ def initialize_data(force: bool = False):
     )
 
 
-@app.before_first_request
+# Lazy bootstrap function - called on first request
 def _lazy_bootstrap():
     """Ensure data is loaded only once per process just before serving traffic."""
-    initialize_data()
-    STARTUP_PHASE["ready"] = True
+    if not STARTUP_PHASE["ready"]:
+        initialize_data()
+        STARTUP_PHASE["ready"] = True
 
 
 @app.route("/ready", methods=["GET"])
 def readiness():
     """Lightweight readiness probe (fast, no DB round trip)."""
+    _lazy_bootstrap()  # Ensure initialization on first request
     return jsonify(
         {
             "ready": STARTUP_PHASE["ready"],
