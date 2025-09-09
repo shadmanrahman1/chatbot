@@ -87,7 +87,13 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 # Database configuration (dynamic to support Railway/Heroku external DBs)
 DB_CONFIG = build_db_config()
 
-logger.info("🚀 Starting WhatsApp Bot for Railway deployment...")
+VERSION = os.getenv("APP_VERSION", "v0.2.0")
+BUILD_COMMIT = os.getenv("RAILWAY_GIT_COMMIT_SHA", os.getenv("GIT_SHA", "unknown"))
+STARTUP_PHASE = {"ready": False}
+
+logger.info(
+    f"🚀 Starting WhatsApp Bot for Railway deployment (version={VERSION}, commit={BUILD_COMMIT[:7]})"
+)
 logger.info(
     f"🗄️ Database target: {DB_CONFIG.get('host')}:{DB_CONFIG.get('port')}/{DB_CONFIG.get('database')} (user={DB_CONFIG.get('user')})"
 )
@@ -1061,6 +1067,37 @@ def initialize_data(force: bool = False):
 def _lazy_bootstrap():
     """Ensure data is loaded only once per process just before serving traffic."""
     initialize_data()
+    STARTUP_PHASE["ready"] = True
+
+
+@app.route("/ready", methods=["GET"])
+def readiness():
+    """Lightweight readiness probe (fast, no DB round trip)."""
+    return jsonify(
+        {
+            "ready": STARTUP_PHASE["ready"],
+            "version": VERSION,
+            "commit": BUILD_COMMIT[:7],
+        }
+    ), 200
+
+
+@app.route("/meta", methods=["GET"])
+def meta_info():
+    """Service metadata for debugging deployments."""
+    return jsonify(
+        {
+            "service": "whatsapp-edtech-bot",
+            "version": VERSION,
+            "commit": BUILD_COMMIT,
+            "python": os.getenv("PYTHON_VERSION", "unknown"),
+            "db_host": DB_CONFIG.get("host"),
+            "db_name": DB_CONFIG.get("database"),
+            "loaded_courses": len(COURSES),
+            "loaded_faqs": len(FAQS),
+            "lazy_ready": STARTUP_PHASE["ready"],
+        }
+    ), 200
 
 
 def _log_config_state():
@@ -1083,5 +1120,5 @@ if __name__ == "__main__":
     # Local dev: trigger lazy load (non-blocking if DB down)
     initialize_data()
     port = int(os.getenv("PORT", 5000))
-    logger.info(f"🌐 Dev server on :{port} (lazy init)")
+    logger.info(f"🌐 Dev server on :{port} (lazy init, version={VERSION})")
     app.run(host="0.0.0.0", port=port, debug=False)
