@@ -233,11 +233,13 @@ def send_whatsapp_message(to_number, message):
         }
 
         logger.info(f"🌐 API Call: POST {url}")
-        logger.info(f"🔑 Using token: ...{WHATSAPP_TOKEN[-10:] if WHATSAPP_TOKEN else 'NONE'}")
+        logger.info(
+            f"🔑 Using token: ...{WHATSAPP_TOKEN[-10:] if WHATSAPP_TOKEN else 'NONE'}"
+        )
         logger.info(f"📞 To: {to_number}, Phone ID: {PHONE_NUMBER_ID}")
 
         response = requests.post(url, json=payload, headers=headers, timeout=30)
-        
+
         logger.info(f"🔄 API Response: {response.status_code}")
         logger.info(f"📄 Response body: {response.text}")
 
@@ -528,8 +530,10 @@ def webhook():
                             for message in messages:
                                 from_number = message.get("from")
                                 message_type = message.get("type")
-                                
-                                logger.info(f"📱 Processing message: type={message_type}, from={from_number}")
+
+                                logger.info(
+                                    f"📱 Processing message: type={message_type}, from={from_number}"
+                                )
 
                                 if message_type == "text":
                                     text_body = message.get("text", {}).get("body", "")
@@ -537,11 +541,15 @@ def webhook():
 
                                     # Process the message
                                     response = process_message(text_body, from_number)
-                                    logger.info(f"🤖 Generated response length: {len(response) if response else 0}")
+                                    logger.info(
+                                        f"🤖 Generated response length: {len(response) if response else 0}"
+                                    )
 
                                     # Send response
                                     if response:
-                                        logger.info(f"📤 Attempting to send message to {from_number}")
+                                        logger.info(
+                                            f"📤 Attempting to send message to {from_number}"
+                                        )
                                         send_success = send_whatsapp_message(
                                             from_number, response
                                         )
@@ -554,7 +562,9 @@ def webhook():
                                                 f"❌ Failed to send response to {from_number}"
                                             )
                                     else:
-                                        logger.error(f"❌ No response generated for message: '{text_body}'")
+                                        logger.error(
+                                            f"❌ No response generated for message: '{text_body}'"
+                                        )
 
             return jsonify({"status": "ok"}), 200
 
@@ -1121,6 +1131,13 @@ def meta_info():
             "loaded_courses": len(COURSES),
             "loaded_faqs": len(FAQS),
             "lazy_ready": STARTUP_PHASE["ready"],
+            "env_check": {
+                "whatsapp_token": "SET" if WHATSAPP_TOKEN else "MISSING",
+                "phone_number_id": PHONE_NUMBER_ID or "MISSING",
+                "verify_token": "SET" if VERIFY_TOKEN else "MISSING",
+                "app_secret": APP_SECRET or "MISSING",
+                "groq_api_key": "SET" if GROQ_API_KEY else "MISSING"
+            }
         }
     ), 200
 
